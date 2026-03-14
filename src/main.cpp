@@ -1,16 +1,21 @@
+#include "display/display.h"
 #include "input/input.h"
 #include <Arduino.h>
 
+#define CELL_SIZE 20
+#define WORLD_WIDTH (DISPLAY_WIDTH / CELL_SIZE)
+#define WORLD_HEIGHT (DISPLAY_HEIGHT / CELL_SIZE)
+
 InputManager inputManager;
+DisplayManager displayManager;
 
-void setup() { Serial.begin(9600); }
+uint8_t currentX = WORLD_WIDTH / 2;
+uint8_t currentY = WORLD_HEIGHT / 2;
 
-void debugButtonsState(uint8_t state) {
-  if ((state & DIRECTION_UP) != 0) Serial.print("UP ");
-  if ((state & DIRECTION_RIGHT) != 0) Serial.print("RIGHT ");
-  if ((state & DIRECTION_DOWN) != 0) Serial.print("DOWN ");
-  if ((state & DIRECTION_LEFT) != 0) Serial.print("LEFT ");
-  if (state != 0) Serial.println();
+void setup() {
+  Serial.begin(9600);
+  displayManager.setup();
+  displayManager.fillRect(currentX * CELL_SIZE, currentY * CELL_SIZE, CELL_SIZE, CELL_SIZE, RED);
 }
 
 void loop() {
@@ -18,16 +23,13 @@ void loop() {
   uint8_t latestPressed = inputManager.getLatestPressedButton();
   if (latestPressed != 0) {
     Serial.print("Latest pressed: ");
-    debugButtonsState(latestPressed);
-  };
-  // uint8_t justPressed = inputManager.getJustPressedButton();
-  // uint8_t justReleased = inputManager.getJustReleasedButton();
-  // if (justPressed != 0) {
-  //   Serial.print("Just pressed: ");
-  //   debugButtonsState(justPressed);
-  // }
-  // if (justReleased != 0) {
-  //   Serial.print("Just released: ");
-  //   debugButtonsState(justReleased);
-  // }
+    inputManager.debugPrintButtons();
+
+    displayManager.fillRect(currentX * CELL_SIZE, currentY * CELL_SIZE, CELL_SIZE, CELL_SIZE, BLACK);
+    if (latestPressed == DIRECTION_UP) currentY = (currentY - 1 + WORLD_HEIGHT) % WORLD_HEIGHT;
+    if (latestPressed == DIRECTION_LEFT) currentX = (currentX - 1 + WORLD_WIDTH) % WORLD_WIDTH;
+    if (latestPressed == DIRECTION_DOWN) currentY = (currentY + 1) % WORLD_HEIGHT;
+    if (latestPressed == DIRECTION_RIGHT) currentX = (currentX + 1) % WORLD_WIDTH;
+    displayManager.fillRect(currentX * CELL_SIZE, currentY * CELL_SIZE, CELL_SIZE, CELL_SIZE, RED);
+  }
 }

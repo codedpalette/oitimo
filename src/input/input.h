@@ -11,6 +11,8 @@
 class InputManager {
 public:
   void update();
+  void debugPrintState();
+  void debugPrintButtons();
   uint8_t getLatestPressedButton();
   uint8_t getJustPressedButton();
   uint8_t getJustReleasedButton();

@@ -1,4 +1,4 @@
-#include "input/input.h"
+#include "input.h"
 #include <Arduino.h>
 
 #define PIN_UP A5
@@ -43,14 +43,16 @@ void InputManager::update() {
   // Push newly pressed buttons onto top of stack
   for (uint8_t i = 0; i < 4; i++) {
     if (justPressed & (1 << i)) {
-      _pressStack |= (i << (stackLen++ * 2));
+      _stackPush(i);
     }
   }
 }
 
 uint8_t InputManager::getLatestPressedButton() {
   uint8_t stackLen = _countBits(_pressedState & 0x0F);
-  return stackLen ? (1 << _slotGet(stackLen - 1)) : 0;
+  return stackLen ? (1 <<                  // Shift 1 left by index of a latest pressed button to get it's mask
+                     (_pressStack & 0x03)) // Lowest 2 bits of stack is index of latest pressed button
+                  : 0;
 }
 
 uint8_t InputManager::getJustPressedButton() {
@@ -91,4 +93,25 @@ void InputManager::_stackRemove(uint8_t i) {
   uint8_t lower = _pressStack & ((1 << (i * 2)) - 1);        // bits below i, unchanged
   uint8_t upper = (_pressStack >> ((i + 1) * 2)) << (i * 2); // bits above i, shifted down one slot
   _pressStack = lower | upper;
+}
+
+void InputManager::debugPrintState() {
+  Serial.print("State: ");
+  for (int8_t i = 7; i >= 0; i--) {
+    Serial.print((_pressedState >> i) & 1);
+  }
+  Serial.print(" Stack: ");
+  for (int8_t i = 7; i >= 0; i--) {
+    Serial.print((_pressStack >> i) & 1);
+  }
+  Serial.println();
+}
+
+void InputManager::debugPrintButtons() {
+  uint8_t state = getLatestPressedButton();
+  if ((state & DIRECTION_UP) != 0) Serial.print("UP ");
+  if ((state & DIRECTION_RIGHT) != 0) Serial.print("RIGHT ");
+  if ((state & DIRECTION_DOWN) != 0) Serial.print("DOWN ");
+  if ((state & DIRECTION_LEFT) != 0) Serial.print("LEFT ");
+  if (state != 0) Serial.println();
 }
